@@ -5,21 +5,28 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Declarative ReactFlow-style workflow document persisted in MongoDB.
  *
- * The shape mirrors the JSON files under mobile_pilot/configs/workflow/*.reactflow.json:
- *   - id / name / description : workflow identifiers
- *   - nodes                   : list of node definitions (id, type, position, data)
- *   - edges                   : list of connections (id, source, target, optional label)
- *   - runtime                 : runtime config (llm, taskConfig, requiredConfigKeys, ...)
+ * <p>The shape mirrors the JSON files under
+ * {@code mobile_pilot/configs/workflow/*.reactflow.json}:
+ * <ul>
+ *     <li>{@code id / name / description} — workflow identifiers</li>
+ *     <li>{@link #getNodes()} — typed list of {@link WorkflowNode}
+ *         (each carries id, {@link NodeType}, position, and a
+ *         {@link NodeData} with label / params / cases)</li>
+ *     <li>{@link #getEdges()} — typed list of {@link WorkflowEdge}
+ *         (id, source, target, optional label / sourceHandle / targetHandle)</li>
+ *     <li>{@link #getRuntime()} — typed {@link WorkflowRuntime}
+ *         (LLM defaults, {@code taskConfig}, optional {@code requiredConfigKeys})</li>
+ * </ul>
  *
- * `nodes`, `edges` and `runtime` are kept as raw structures so each workflow
- * can carry its own action params / LLM schemas / task config without
- * forcing the model to know every variant.
+ * <p>As the runner grows new node / action variants, prefer adding typed
+ * payload classes (see {@code *Params.java}) rather than reintroducing
+ * raw {@code Map} types.
  */
 @Document(collection = "workflows")
 public class Workflow {
@@ -30,9 +37,9 @@ public class Workflow {
     private String name;
     private String description;
 
-    private List<Map<String, Object>> nodes;
-    private List<Map<String, Object>> edges;
-    private Map<String, Object> runtime;
+    private List<WorkflowNode> nodes = new ArrayList<>();
+    private List<WorkflowEdge> edges = new ArrayList<>();
+    private WorkflowRuntime runtime = new WorkflowRuntime();
 
     @Version
     private Long version;
@@ -64,27 +71,27 @@ public class Workflow {
         this.description = description;
     }
 
-    public List<Map<String, Object>> getNodes() {
+    public List<WorkflowNode> getNodes() {
         return nodes;
     }
 
-    public void setNodes(List<Map<String, Object>> nodes) {
+    public void setNodes(List<WorkflowNode> nodes) {
         this.nodes = nodes;
     }
 
-    public List<Map<String, Object>> getEdges() {
+    public List<WorkflowEdge> getEdges() {
         return edges;
     }
 
-    public void setEdges(List<Map<String, Object>> edges) {
+    public void setEdges(List<WorkflowEdge> edges) {
         this.edges = edges;
     }
 
-    public Map<String, Object> getRuntime() {
+    public WorkflowRuntime getRuntime() {
         return runtime;
     }
 
-    public void setRuntime(Map<String, Object> runtime) {
+    public void setRuntime(WorkflowRuntime runtime) {
         this.runtime = runtime;
     }
 
